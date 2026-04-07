@@ -10,8 +10,19 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>asana-cli</ToolCommandName>
     <PackageId>asana-cli</PackageId>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
+    <Authors>Afroze Amjad</Authors>
+    <Description>A .NET global tool for interacting with Asana — manage workspaces, projects, and tasks from the command line using Personal Access Tokens.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/afroze9/asana-cli</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/afroze9/asana-cli</RepositoryUrl>
+    <PackageTags>cli;asana;project-management;dotnet-tool</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.5" />
