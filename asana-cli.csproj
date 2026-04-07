@@ -10,7 +10,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>asana-cli</ToolCommandName>
     <PackageId>asana-cli</PackageId>
-    <Version>0.3.2</Version>
+    <Version>0.4.0</Version>
     <PackageIcon>icon.png</PackageIcon>
     <Authors>Afroze Amjad</Authors>
     <Description>A .NET global tool for interacting with Asana — manage workspaces, projects, and tasks from the command line using Personal Access Tokens.</Description>
