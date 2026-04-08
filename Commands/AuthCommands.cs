@@ -102,7 +102,7 @@ public static class AuthCommands
                     isLoggedIn = true,
                     name = me?.Name,
                     email = me?.Email,
-                    tokenPrefix = status.TokenPrefix,
+                    tokenConfigured = status.TokenConfigured,
                     activeWorkspace = status.ActiveWorkspace,
                     activeWorkspaceGid = status.ActiveWorkspaceGid
                 });

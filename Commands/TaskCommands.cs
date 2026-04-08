@@ -42,7 +42,7 @@ public static class TaskCommands
             try
             {
                 var task = await AsanaClientProvider.GetAsync<AsanaTaskDetail>(
-                    $"tasks/{taskId}?opt_fields={TaskOptFields}", ct);
+                    $"tasks/{Uri.EscapeDataString(taskId)}?opt_fields={TaskOptFields}", ct);
 
                 if (task == null)
                 {
@@ -55,14 +55,14 @@ public static class TaskCommands
                 if (includeSubtasks && (task.NumSubtasks ?? 0) > 0)
                 {
                     subtasks = await AsanaClientProvider.GetAsync<List<AsanaSubtask>>(
-                        $"tasks/{taskId}/subtasks?opt_fields=gid,name,completed,assignee.name,due_on", ct);
+                        $"tasks/{Uri.EscapeDataString(taskId)}/subtasks?opt_fields=gid,name,completed,assignee.name,due_on", ct);
                 }
 
                 List<AsanaStory>? comments = null;
                 if (includeComments)
                 {
                     var stories = await AsanaClientProvider.GetAsync<List<AsanaStory>>(
-                        $"tasks/{taskId}/stories?opt_fields=gid,type,resource_subtype,text,created_by.name,created_at", ct);
+                        $"tasks/{Uri.EscapeDataString(taskId)}/stories?opt_fields=gid,type,resource_subtype,text,created_by.name,created_at", ct);
                     comments = stories?.Where(s => s.ResourceSubtype == "comment_added").ToList();
                 }
 

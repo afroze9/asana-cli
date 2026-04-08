@@ -36,7 +36,7 @@ public static class ProjectCommands
                     }
                 }
 
-                var endpoint = $"projects?workspace={workspace}&opt_fields=gid,name,color,archived,created_at,modified_at&limit=100";
+                var endpoint = $"projects?workspace={Uri.EscapeDataString(workspace)}&opt_fields=gid,name,color,archived,created_at,modified_at&limit=100";
 
                 var projects = await AsanaClientProvider.GetAsync<List<AsanaProject>>(endpoint, ct);
                 var results = projects?.Select(p => new
@@ -77,7 +77,7 @@ public static class ProjectCommands
             try
             {
                 var tasks = await AsanaClientProvider.GetAsync<List<AsanaTask>>(
-                    $"projects/{projectId}/tasks?opt_fields=gid,name,assignee.name,due_on,completed,completed_at,created_at,modified_at",
+                    $"projects/{Uri.EscapeDataString(projectId)}/tasks?opt_fields=gid,name,assignee.name,due_on,completed,completed_at,created_at,modified_at",
                     ct);
                 var results = tasks?.Select(t => new
                 {

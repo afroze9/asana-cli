@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace AsanaCli.Services;
@@ -34,6 +36,32 @@ public class AuthService
         var config = LoadConfig() ?? new AsanaCliConfig();
         config.PatToken = patToken;
         SaveConfig(config);
+    }
+
+    private static string ProtectToken(string token)
+    {
+        if (string.IsNullOrEmpty(token) || token.StartsWith("enc:"))
+            return token;
+
+        if (!OperatingSystem.IsWindows())
+            return token;
+
+        var bytes = Encoding.UTF8.GetBytes(token);
+        var encrypted = ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
+        return "enc:" + Convert.ToBase64String(encrypted);
+    }
+
+    private static string UnprotectToken(string token)
+    {
+        if (string.IsNullOrEmpty(token) || !token.StartsWith("enc:"))
+            return token;
+
+        if (!OperatingSystem.IsWindows())
+            return token;
+
+        var encrypted = Convert.FromBase64String(token["enc:".Length..]);
+        var decrypted = ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
+        return Encoding.UTF8.GetString(decrypted);
     }
 
     public void SetWorkspaces(List<WorkspaceInfo> workspaces)
@@ -86,7 +114,7 @@ public class AuthService
         return new AuthStatus
         {
             IsLoggedIn = true,
-            TokenPrefix = config.PatToken![..Math.Min(8, config.PatToken.Length)] + "...",
+            TokenConfigured = true,
             ActiveWorkspace = activeWs?.Name,
             ActiveWorkspaceGid = activeWs?.Gid
         };
@@ -106,13 +134,22 @@ public class AuthService
             return null;
 
         var json = File.ReadAllText(ConfigPath);
-        return JsonSerializer.Deserialize<AsanaCliConfig>(json);
+        var config = JsonSerializer.Deserialize<AsanaCliConfig>(json);
+        if (config != null && !string.IsNullOrEmpty(config.PatToken))
+            config.PatToken = UnprotectToken(config.PatToken);
+        return config;
     }
 
     private static void SaveConfig(AsanaCliConfig config)
     {
         Directory.CreateDirectory(ConfigDir);
-        var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+        var toSave = new AsanaCliConfig
+        {
+            PatToken = ProtectToken(config.PatToken ?? ""),
+            ActiveWorkspace = config.ActiveWorkspace,
+            Workspaces = config.Workspaces
+        };
+        var json = JsonSerializer.Serialize(toSave, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(ConfigPath, json);
     }
 }
@@ -133,7 +170,7 @@ public class WorkspaceInfo
 public class AuthStatus
 {
     public bool IsLoggedIn { get; set; }
-    public string? TokenPrefix { get; set; }
+    public bool? TokenConfigured { get; set; }
     public string? ActiveWorkspace { get; set; }
     public string? ActiveWorkspaceGid { get; set; }
     public string? Message { get; set; }

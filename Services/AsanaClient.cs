@@ -46,12 +46,26 @@ public class AsanaResponse<T>
 public class AsanaApiException : Exception
 {
     public System.Net.HttpStatusCode StatusCode { get; }
-    public string ResponseBody { get; }
 
     public AsanaApiException(System.Net.HttpStatusCode statusCode, string responseBody)
-        : base($"Asana API error ({statusCode}): {responseBody}")
+        : base(ParseErrorMessage(statusCode, responseBody))
     {
         StatusCode = statusCode;
-        ResponseBody = responseBody;
+    }
+
+    private static string ParseErrorMessage(System.Net.HttpStatusCode statusCode, string responseBody)
+    {
+        try
+        {
+            var doc = JsonSerializer.Deserialize<JsonElement>(responseBody);
+            if (doc.TryGetProperty("errors", out var errors) && errors.GetArrayLength() > 0)
+            {
+                var msg = errors[0].TryGetProperty("message", out var m) ? m.GetString() : null;
+                if (!string.IsNullOrEmpty(msg))
+                    return $"Asana API error ({(int)statusCode}): {msg}";
+            }
+        }
+        catch { }
+        return $"Asana API error ({(int)statusCode})";
     }
 }
