@@ -24,23 +24,8 @@ public static class WorkspaceCommands
             var format = parseResult.GetValue(formatOption) ?? "json";
             try
             {
-                var auth = new AuthService();
-                var (workspaces, activeGid) = auth.GetWorkspaces();
-
-                if (workspaces.Count == 0)
-                {
-                    OutputService.PrintError("no_workspaces", "No workspaces stored. Run 'asana-cli auth login' first.");
-                    Environment.ExitCode = 1;
-                    return Task.CompletedTask;
-                }
-
-                var results = workspaces.Select(w => new
-                {
-                    w.Gid,
-                    w.Name,
-                    Active = w.Gid == activeGid
-                }).ToList();
-                OutputService.Print(results, format);
+                var result = WorkspaceService.List();
+                OutputService.Print(result, format);
             }
             catch (Exception ex)
             {
@@ -61,23 +46,8 @@ public static class WorkspaceCommands
             try
             {
                 var gid = parseResult.GetValue(gidArg)!;
-                var auth = new AuthService();
-
-                if (!auth.SwitchWorkspace(gid))
-                {
-                    OutputService.PrintError("not_found", $"Workspace '{gid}' not found. Run 'asana-cli workspace list' to see available workspaces.");
-                    Environment.ExitCode = 1;
-                    return Task.CompletedTask;
-                }
-
-                var (workspaces, _) = auth.GetWorkspaces();
-                var ws = workspaces.FirstOrDefault(w => w.Gid == gid);
-                OutputService.Print(new
-                {
-                    status = "switched",
-                    gid = ws?.Gid,
-                    name = ws?.Name
-                });
+                var result = WorkspaceService.Switch(gid);
+                OutputService.Print(result);
             }
             catch (Exception ex)
             {
@@ -97,26 +67,8 @@ public static class WorkspaceCommands
             var format = parseResult.GetValue(formatOption) ?? "json";
             try
             {
-                var auth = new AuthService();
-                var workspaces = await AsanaClientProvider.GetAsync<List<WorkspaceInfo>>("workspaces?opt_fields=gid,name", ct);
-
-                if (workspaces == null || workspaces.Count == 0)
-                {
-                    OutputService.PrintError("no_workspaces", "No workspaces found in Asana.");
-                    Environment.ExitCode = 1;
-                    return;
-                }
-
-                auth.SetWorkspaces(workspaces);
-                var (_, activeGid) = auth.GetWorkspaces();
-
-                var results = workspaces.Select(w => new
-                {
-                    w.Gid,
-                    w.Name,
-                    Active = w.Gid == activeGid
-                }).ToList();
-                OutputService.Print(results, format);
+                var result = await WorkspaceService.RefreshAsync(ct);
+                OutputService.Print(result, format);
             }
             catch (AsanaApiException ex)
             {

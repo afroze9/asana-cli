@@ -14,12 +14,17 @@ public static class AllowedProjectsService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    public static bool IsBypassed =>
+        string.Equals(Environment.GetEnvironmentVariable("ASANA_CLI_SKIP_ALLOWLIST"), "true", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Checks if the given project is allowed for the requested action.
     /// If not, prompts the user interactively to allow once, allow and save, or deny.
     /// </summary>
     public static bool CheckAndPrompt(string projectGid, string action, string? displayName = null)
     {
+        if (IsBypassed) return true;
+
         var list = Load();
         var entry = list.Projects.FirstOrDefault(p =>
             string.Equals(p.Gid, projectGid, StringComparison.OrdinalIgnoreCase));

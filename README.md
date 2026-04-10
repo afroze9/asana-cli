@@ -66,6 +66,57 @@ asana-cli permission remove <project-gid>
 | `write` | Create/update tasks (future) |
 | `delete` | Delete tasks (future) |
 
+## MCP Server
+
+asana-cli includes a built-in [Model Context Protocol](https://modelcontextprotocol.io/) server, allowing AI assistants (Claude Desktop, Cursor, etc.) to interact with Asana directly.
+
+```bash
+# Start the MCP server over stdio
+asana-cli mcp
+```
+
+### Claude Desktop Configuration
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "asana-cli": {
+      "command": "asana-cli",
+      "args": ["mcp"],
+      "env": {
+        "ASANA_PAT": "<your-pat>",
+        "ASANA_WORKSPACE": "<workspace-gid>",
+        "ASANA_CLI_SKIP_ALLOWLIST": "true"
+      }
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `workspace_list` | List workspaces and show active |
+| `workspace_switch` | Set active workspace |
+| `workspace_refresh` | Refresh workspace list from API |
+| `project_list` | List projects in active workspace |
+| `project_tasks` | List tasks in a project |
+| `task_view` | View full task details (subtasks, comments) |
+| `permission_list` | List allowed projects |
+| `permission_allow` | Add/update an allowed project |
+| `permission_remove` | Remove a project from allowed list |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ASANA_PAT` | Personal Access Token (alternative to `auth login`) |
+| `ASANA_WORKSPACE` | Override active workspace GID |
+| `ASANA_CLI_SKIP_ALLOWLIST` | Set to `true` to bypass project permission checks |
+
 ## Global Options
 
 | Option | Description |

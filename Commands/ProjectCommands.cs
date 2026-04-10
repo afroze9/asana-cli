@@ -25,34 +25,17 @@ public static class ProjectCommands
             var workspace = parseResult.GetValue(workspaceOption);
             try
             {
-                if (string.IsNullOrEmpty(workspace))
-                {
-                    workspace = new AuthService().GetActiveWorkspaceGid();
-                    if (string.IsNullOrEmpty(workspace))
-                    {
-                        OutputService.PrintError("no_workspace", "No active workspace. Run 'asana-cli workspace list' or 'asana-cli workspace switch <gid>'.");
-                        Environment.ExitCode = 1;
-                        return;
-                    }
-                }
-
-                var endpoint = $"projects?workspace={Uri.EscapeDataString(workspace)}&opt_fields=gid,name,color,archived,created_at,modified_at&limit=100";
-
-                var projects = await AsanaClientProvider.GetAsync<List<AsanaProject>>(endpoint, ct);
-                var results = projects?.Select(p => new
-                {
-                    p.Gid,
-                    p.Name,
-                    p.Color,
-                    p.Archived,
-                    p.CreatedAt,
-                    p.ModifiedAt
-                }).ToList();
-                OutputService.Print(results, format);
+                var result = await ProjectService.ListAsync(workspace, ct);
+                OutputService.Print(result, format);
             }
             catch (AsanaApiException ex)
             {
                 OutputService.PrintError("api_error", ex.Message);
+                Environment.ExitCode = 1;
+            }
+            catch (Exception ex)
+            {
+                OutputService.PrintError("error", ex.Message);
                 Environment.ExitCode = 1;
             }
         });
@@ -67,29 +50,15 @@ public static class ProjectCommands
         {
             var format = parseResult.GetValue(formatOption) ?? "json";
             var projectId = parseResult.GetValue(projectIdArg)!;
-
-            if (!AllowedProjectsService.CheckAndPrompt(projectId, "read"))
-            {
-                Environment.ExitCode = 1;
-                return;
-            }
-
             try
             {
-                var tasks = await AsanaClientProvider.GetAsync<List<AsanaTask>>(
-                    $"projects/{Uri.EscapeDataString(projectId)}/tasks?opt_fields=gid,name,assignee.name,due_on,completed,completed_at,created_at,modified_at",
-                    ct);
-                var results = tasks?.Select(t => new
-                {
-                    t.Gid,
-                    t.Name,
-                    Assignee = t.Assignee?.Name,
-                    t.DueOn,
-                    t.Completed,
-                    t.CreatedAt,
-                    t.ModifiedAt
-                }).ToList();
-                OutputService.Print(results, format);
+                var result = await ProjectService.GetTasksAsync(projectId, ct);
+                OutputService.Print(result, format);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                OutputService.PrintError("not_allowed", ex.Message);
+                Environment.ExitCode = 1;
             }
             catch (AsanaApiException ex)
             {

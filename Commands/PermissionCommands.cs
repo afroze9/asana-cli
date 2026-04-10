@@ -24,20 +24,8 @@ public static class PermissionCommands
             var format = parseResult.GetValue(formatOption) ?? "json";
             try
             {
-                var list = AllowedProjectsService.Load();
-                if (list.Projects.Count == 0)
-                {
-                    OutputService.Print(new { message = "No allowed projects configured. Projects will prompt on first use." });
-                    return Task.CompletedTask;
-                }
-
-                var results = list.Projects.Select(p => new
-                {
-                    p.Gid,
-                    p.DisplayName,
-                    Actions = string.Join(", ", p.AllowedActions)
-                }).ToList();
-                OutputService.Print(results, format);
+                var result = PermissionService.List();
+                OutputService.Print(result, format);
             }
             catch (Exception ex)
             {
@@ -67,42 +55,8 @@ public static class PermissionCommands
                 var gid = parseResult.GetValue(gidArg)!;
                 var name = parseResult.GetValue(nameOption);
                 var actions = parseResult.GetValue(actionsOption) ?? ["read", "write"];
-
-                // If no name provided, try to fetch it from API
-                if (string.IsNullOrEmpty(name))
-                {
-                    try
-                    {
-                        var project = await AsanaClientProvider.GetAsync<AsanaProject>($"projects/{gid}?opt_fields=name", ct);
-                        name = project?.Name ?? gid;
-                    }
-                    catch
-                    {
-                        name = gid;
-                    }
-                }
-
-                var list = AllowedProjectsService.Load();
-                var existing = list.Projects.FirstOrDefault(p =>
-                    string.Equals(p.Gid, gid, StringComparison.OrdinalIgnoreCase));
-
-                if (existing != null)
-                {
-                    existing.DisplayName = name;
-                    existing.AllowedActions = actions.ToList();
-                }
-                else
-                {
-                    list.Projects.Add(new AllowedProject
-                    {
-                        Gid = gid,
-                        DisplayName = name,
-                        AllowedActions = actions.ToList()
-                    });
-                }
-
-                AllowedProjectsService.Save(list);
-                OutputService.Print(new { status = "allowed", gid, name, actions });
+                var result = await PermissionService.AllowAsync(gid, name, actions, ct);
+                OutputService.Print(result);
             }
             catch (Exception ex)
             {
@@ -122,19 +76,8 @@ public static class PermissionCommands
             try
             {
                 var gid = parseResult.GetValue(gidArg)!;
-                var list = AllowedProjectsService.Load();
-                var removed = list.Projects.RemoveAll(p =>
-                    string.Equals(p.Gid, gid, StringComparison.OrdinalIgnoreCase));
-
-                if (removed == 0)
-                {
-                    OutputService.PrintError("not_found", $"Project '{gid}' not in allowed list.");
-                    Environment.ExitCode = 1;
-                    return Task.CompletedTask;
-                }
-
-                AllowedProjectsService.Save(list);
-                OutputService.Print(new { status = "removed", gid });
+                var result = PermissionService.Remove(gid);
+                OutputService.Print(result);
             }
             catch (Exception ex)
             {

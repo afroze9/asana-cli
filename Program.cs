@@ -10,5 +10,6 @@ rootCommand.Subcommands.Add(WorkspaceCommands.Build(GlobalOptions.Format));
 rootCommand.Subcommands.Add(ProjectCommands.Build(GlobalOptions.Format));
 rootCommand.Subcommands.Add(TaskCommands.Build(GlobalOptions.Format));
 rootCommand.Subcommands.Add(PermissionCommands.Build(GlobalOptions.Format));
+rootCommand.Subcommands.Add(McpCommand.Build());
 
 return await rootCommand.Parse(args).InvokeAsync();
